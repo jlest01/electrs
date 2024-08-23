@@ -6,8 +6,6 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 use crate::types::{HashPrefix, SerializedHashPrefixRow, SerializedHeaderRow};
 
-pub(crate) type Row = Box<[u8]>;
-
 #[derive(Default)]
 pub(crate) struct WriteBatch {
     pub(crate) tip_row: [u8; 32],
@@ -16,7 +14,7 @@ pub(crate) struct WriteBatch {
     pub(crate) funding_rows: Vec<SerializedHashPrefixRow>,
     pub(crate) spending_rows: Vec<SerializedHashPrefixRow>,
     pub(crate) txid_rows: Vec<SerializedHashPrefixRow>,
-    pub(crate) tweak_rows: Vec<Row>,
+    pub(crate) tweak_rows: Vec<Vec<u8>>,
 }
 
 impl WriteBatch {
@@ -313,13 +311,9 @@ impl DBStore {
     pub(crate) fn write_sp(&self, batch: &WriteBatch) {
         let mut db_batch = rocksdb::WriteBatch::default();
 
-        // Only for silent payments tweak sync
         for key in &batch.tweak_rows {
-            if key.len() > 8 {
-                db_batch.put_cf(self.tweak_cf(), &key[..8], &key[8..]);
-            }
+            db_batch.put_cf(self.tweak_cf(), key, b"");
         }
-
         db_batch.put_cf(self.headers_cf(), SP_KEY, batch.sp_tip_row);
         
         let mut opts = rocksdb::WriteOptions::new();

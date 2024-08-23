@@ -525,8 +525,7 @@ fn scan_single_block_for_silent_payments(
                     // writeln!(file, "tweak        {:?}\n-------", pubkey_tweak).unwrap();
 
                     if let Some(value) = self.map.get_mut(&block_hash) {
-                        // value.extend(&tweak.serialize());
-                        value.extend(&tweak);
+                        value.extend(tweak.iter());
                     } else {
                         self.map.insert(block_hash, Vec::from_iter(tweak)); 
                     }
@@ -550,7 +549,7 @@ fn scan_single_block_for_silent_payments(
         let height = index.chain.get_block_height(&hash).expect("Unexpected non existing blockhash");
         let mut value: Vec<u8> = u64::try_from(height).expect("Unexpected invalid usize").to_be_bytes().to_vec();
         value.extend(tweaks.iter());
-        batch.tweak_rows.push(value.into_boxed_slice());
+        batch.tweak_rows.push(value);
     }
     let len = block_hash
         .consensus_encode(&mut (&mut batch.sp_tip_row as &mut [u8]))
