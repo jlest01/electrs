@@ -11,7 +11,7 @@ pub(crate) type Row = Box<[u8]>;
 #[derive(Default)]
 pub(crate) struct WriteBatch {
     pub(crate) tip_row: [u8; 32],
-    pub(crate) sp_tip_row: Row,
+    pub(crate) sp_tip_row: [u8; 32],
     pub(crate) header_rows: Vec<SerializedHeaderRow>,
     pub(crate) funding_rows: Vec<SerializedHashPrefixRow>,
     pub(crate) spending_rows: Vec<SerializedHashPrefixRow>,
@@ -42,7 +42,7 @@ const FUNDING_CF: &str = "funding";
 const SPENDING_CF: &str = "spending";
 const TWEAK_CF: &str = "tweak";
 
-const COLUMN_FAMILIES: &[&str] = &[CONFIG_CF, HEADERS_CF, TXID_CF, FUNDING_CF, SPENDING_CF];
+const COLUMN_FAMILIES: &[&str] = &[CONFIG_CF, HEADERS_CF, TXID_CF, FUNDING_CF, SPENDING_CF, TWEAK_CF];
 
 const CONFIG_KEY: &str = "C";
 const TIP_KEY: &[u8] = b"T";
@@ -301,20 +301,22 @@ impl DBStore {
         for key in &batch.header_rows {
             db_batch.put_cf(self.headers_cf(), key, b"");
         }
-        if !batch.tip_row.is_empty() {
+
+        if batch.tip_row != [0u8; 32] {
             db_batch.put_cf(self.headers_cf(), TIP_KEY, batch.tip_row);
         }
-
+        
         // Only for silent payments tweak sync
         for key in &batch.tweak_rows {
             if key.len() > 8 {
                 db_batch.put_cf(self.tweak_cf(), &key[..8], &key[8..]);
             }
         }
-        if !batch.sp_tip_row.is_empty() {
-            db_batch.put_cf(self.headers_cf(), SP_KEY, &batch.sp_tip_row);
-        }
 
+        if batch.sp_tip_row != [0u8; 32] {
+            db_batch.put_cf(self.headers_cf(), SP_KEY, batch.sp_tip_row);
+        }
+        
         let mut opts = rocksdb::WriteOptions::new();
         let bulk_import = self.bulk_import.load(Ordering::Relaxed);
         opts.set_sync(!bulk_import);

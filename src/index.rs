@@ -174,8 +174,6 @@ impl Index {
         exit_flag: &ExitFlag,
     ) -> Result<bool> {
 
-        println!("Silent payments sync");
-
         let mut new_headers: Vec<NewHeader> = Vec::with_capacity(2000);
         let start: usize;
         if let Some(row) = self.store.last_sp() {
@@ -509,21 +507,22 @@ fn scan_single_block_for_silent_payments(
                 // check in which block is this transaction
                 if let Some(block_hash) = self.index.filter_by_txid(txid).next() {
 
-                    let tweak = PublicKey::from_slice(&tweak).expect("Unexpected invalid public key");
+                    // let pubkey_tweak = PublicKey::from_slice(&tweak).expect("Unexpected invalid public key");
 
-                    println!("block_hash   {}", block_hash.to_string());
-                    println!("current txid {}", txid.to_string());
-                    println!("tweak        {:?}\n-------", tweak);
+                    // println!("block_hash   {}", block_hash.to_string());
+                    // println!("current txid {}", txid.to_string());
+                    // println!("tweak        {:?}\n-------", pubkey_tweak);
 
-                    writeln!(file, "block_hash   {}", block_hash.to_string()).unwrap();
-                    writeln!(file, "current txid {}", txid.to_string()).unwrap();
-                    writeln!(file, "tweak        {:?}\n-------", tweak).unwrap();
+                    // writeln!(file, "block_hash   {}", block_hash.to_string()).unwrap();
+                    // writeln!(file, "current txid {}", txid.to_string()).unwrap();
+                    // writeln!(file, "tweak        {:?}\n-------", pubkey_tweak).unwrap();
 
-                    /* if let Some(value) = self.map.get_mut(&block_hash) {
-                        value.extend(&tweak.serialize());
+                    if let Some(value) = self.map.get_mut(&block_hash) {
+                        // value.extend(&tweak.serialize());
+                        value.extend(&tweak);
                     } else {
-                        self.map.insert(block_hash, Vec::from_iter(tweak.serialize())); 
-                    } */
+                        self.map.insert(block_hash, Vec::from_iter(tweak)); 
+                    }
                 } else {
                     panic!("Unexpected unknown transaction");
                 }
@@ -547,7 +546,7 @@ fn scan_single_block_for_silent_payments(
         batch.tweak_rows.push(value.into_boxed_slice());
     }
     let len = block_hash
-        .consensus_encode(&mut (&mut batch.tip_row as &mut [u8]))
+        .consensus_encode(&mut (&mut batch.sp_tip_row as &mut [u8]))
         .expect("in-memory writers don't error");
     debug_assert_eq!(len, BlockHash::LEN);
 }

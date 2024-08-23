@@ -172,7 +172,7 @@ pub fn get_smallest_outpoint(outpoints_data: &[(Txid, u32)],) -> Result<[u8; 36]
     // should probably just use an OutPoints type properly at some point
     for (txid, vout) in outpoints_data {
         // let mut bytes: Vec<u8> = hex::decode(txid.as_str())?;
-        let mut bytes = bitcoin::consensus::encode::serialize(&txid);
+        let bytes = bitcoin::consensus::encode::serialize(&txid);
 
         if bytes.len() != 32 {
             return Err(Error::msg(format!(
