@@ -308,8 +308,15 @@ impl Index {
         );
         batch.sort();
         self.stats.observe_batch(&batch);
-        self.stats
-            .observe_duration("write", || self.store.write(&batch));
+
+        if !sp {
+            self.stats
+                .observe_duration("write", || self.store.write(&batch));
+        } else {
+            self.stats
+                .observe_duration("write_sp", || self.store.write_sp(&batch));
+        }
+        
         self.stats.observe_db(&self.store);
         Ok(())
     }

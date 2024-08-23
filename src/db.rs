@@ -301,11 +301,18 @@ impl DBStore {
         for key in &batch.header_rows {
             db_batch.put_cf(self.headers_cf(), key, b"");
         }
+        db_batch.put_cf(self.headers_cf(), TIP_KEY, batch.tip_row);
 
-        if batch.tip_row != [0u8; 32] {
-            db_batch.put_cf(self.headers_cf(), TIP_KEY, batch.tip_row);
-        }
-        
+        let mut opts = rocksdb::WriteOptions::new();
+        let bulk_import = self.bulk_import.load(Ordering::Relaxed);
+        opts.set_sync(!bulk_import);
+        opts.disable_wal(bulk_import);
+        self.db.write_opt(db_batch, &opts).unwrap();
+    }
+
+    pub(crate) fn write_sp(&self, batch: &WriteBatch) {
+        let mut db_batch = rocksdb::WriteBatch::default();
+
         // Only for silent payments tweak sync
         for key in &batch.tweak_rows {
             if key.len() > 8 {
@@ -313,9 +320,7 @@ impl DBStore {
             }
         }
 
-        if batch.sp_tip_row != [0u8; 32] {
-            db_batch.put_cf(self.headers_cf(), SP_KEY, batch.sp_tip_row);
-        }
+        db_batch.put_cf(self.headers_cf(), SP_KEY, batch.sp_tip_row);
         
         let mut opts = rocksdb::WriteOptions::new();
         let bulk_import = self.bulk_import.load(Ordering::Relaxed);
