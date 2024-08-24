@@ -322,7 +322,10 @@ impl DBStore {
         let mut db_batch = rocksdb::WriteBatch::default();
 
         for key in &batch.tweak_rows {
-            db_batch.put_cf(self.tweak_cf(), key, b"");
+            // db_batch.put_cf(self.tweak_cf(), key, b"");
+            if key.len() > 8 {
+                db_batch.put_cf(self.tweak_cf(), &key[..8], &key[8..]);
+            }
         }
         db_batch.put_cf(self.headers_cf(), SP_KEY, batch.sp_tip_row);
         
