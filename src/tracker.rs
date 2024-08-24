@@ -25,6 +25,7 @@ pub struct Tracker {
     mempool: Mempool,
     metrics: Metrics,
     ignore_mempool: bool,
+    silent_payments_index: bool,
 }
 
 pub(crate) enum Error {
@@ -52,6 +53,7 @@ impl Tracker {
             mempool: Mempool::new(&metrics),
             metrics,
             ignore_mempool: config.ignore_mempool,
+            silent_payments_index: config.silent_payments_index,
         })
     }
 
@@ -73,7 +75,7 @@ impl Tracker {
 
     pub(crate) fn sync(&mut self, daemon: &Daemon, exit_flag: &ExitFlag) -> Result<bool> {
         let mut done = self.index.sync(daemon, exit_flag)?;
-        if done {
+        if done && self.silent_payments_index {
             done = self.index.silent_payments_sync(daemon, exit_flag)?;
         }
         if done && !self.ignore_mempool {
