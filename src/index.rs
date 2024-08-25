@@ -93,6 +93,7 @@ pub struct Index {
     chain: Chain,
     stats: Stats,
     is_ready: bool,
+    is_sp_ready: bool,
     flush_needed: bool,
 }
 
@@ -123,6 +124,7 @@ impl Index {
             chain,
             stats,
             is_ready: false,
+            is_sp_ready: false,
             flush_needed: false,
         })
     }
@@ -232,14 +234,14 @@ impl Index {
                     self.store.flush(); // full compaction is performed on the first flush call
                     self.flush_needed = false;
                 }
-                self.is_ready = true;
+                self.is_sp_ready = true;
                 return Ok(true); // no more blocks to index (done for now)
             }
         }
         for chunk in new_headers.chunks(self.batch_size) {
             exit_flag.poll().with_context(|| {
                 format!(
-                    "indexing interrupted at height: {}",
+                    "indexing sp interrupted at height: {}",
                     chunk.first().unwrap().height()
                 )
             })?;
@@ -265,11 +267,11 @@ impl Index {
                 );
             }
             _ => {
-                // if self.flush_needed {
-                //     self.store.flush(); // full compaction is performed on the first flush call
-                //     self.flush_needed = false;
-                // }
-                // self.is_ready = true;
+                if self.flush_needed {
+                    self.store.flush(); // full compaction is performed on the first flush call
+                    self.flush_needed = false;
+                }
+                self.is_ready = true;
                 return Ok(true); // no more blocks to index (done for now)
             }
         }
@@ -344,6 +346,10 @@ impl Index {
 
     pub(crate) fn is_ready(&self) -> bool {
         self.is_ready
+    }
+
+    pub(crate) fn is_sp_ready(&self) -> bool {
+        self.is_sp_ready
     }
 }
 
@@ -511,8 +517,16 @@ fn scan_single_block_for_silent_payments(
                 .create(true)
                 .open(path).unwrap();
 
+            let pubkeys_ref: Vec<&PublicKey> = pubkeys.iter().collect();
+            let pubkeys_ref = pubkeys_ref.as_slice();
+
+            // if the pubkeys have opposite parity, the combine_pubkey_result will be Err
+            let combine_pubkey_result = PublicKey::combine_keys(pubkeys_ref);
+
+            // println!("combine_pubkey_result: {:?}", combine_pubkey_result);
+
             // if !pubkeys_ref.is_empty() {
-            if !pubkeys.is_empty() || !xonly_pubkeys.is_empty() {
+            if combine_pubkey_result.is_ok() && (!pubkeys.is_empty() || !xonly_pubkeys.is_empty()) {
 
                 let input_pub_keys = if pubkeys.is_empty() {
                     None
@@ -527,6 +541,8 @@ fn scan_single_block_for_silent_payments(
                 }; 
 
                 // let smallest_outpoint = crate::sp::get_smallest_outpoint(&outpoints).expect("Unexpected invalid transaction");
+
+                // println!("txid: {}", txid.to_string());
                 
                 let tweak = crate::sp::recipient_calculate_tweak_data(input_xpub_keys, input_pub_keys, &outpoints).unwrap();
 

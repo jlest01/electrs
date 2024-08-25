@@ -207,7 +207,32 @@ pub fn recipient_calculate_tweak_data(
     input_pub_keys: Option<&[PublicKey]>,
     outpoints_data: &[(Txid, u32)],
 ) -> Result<[u8; 33], Error> {
+
+    // print outpoints_data
+    // for (txid, vout) in outpoints_data {
+    //     println!("txid: {}, vout: {}", txid.to_string(), vout);
+    // }
+
     let smallest_outpoint = get_smallest_outpoint(outpoints_data).unwrap();
+
+    // if input_xpub_keys.is_some() {
+    //     // print
+    //     let xpub_keys = input_xpub_keys.unwrap();
+    //     for xpub_key in xpub_keys {
+    //         println!("xpub_key: {}", xpub_key.to_string());
+    //     }
+    // }
+
+    // if input_pub_keys.is_some() {
+    //     // print
+    //     let pub_keys = input_pub_keys.unwrap();
+    //     for pub_key in pub_keys {
+    //         println!("pub_key: {}", pub_key.to_string());
+    //     }
+    // }
+
+    // print("smallest_outpoint: ");
+    // println!("smallest_outpoint: {}\n-------", hex::encode(smallest_outpoint));
 
     let secp = Secp256k1::new();
     let public_data = SilentpaymentsPublicData::create(

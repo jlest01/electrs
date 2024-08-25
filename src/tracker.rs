@@ -26,7 +26,7 @@ pub struct Tracker {
     mempool: Mempool,
     metrics: Metrics,
     ignore_mempool: bool,
-    silent_payments_index: bool,
+    pub silent_payments_index: bool,
 }
 
 pub(crate) enum Error {
@@ -88,6 +88,13 @@ impl Tracker {
 
     pub(crate) fn status(&self) -> Result<(), Error> {
         if self.index.is_ready() {
+            return Ok(());
+        }
+        Err(Error::NotReady)
+    }
+
+    pub(crate) fn sp_status(&self) -> Result<(), Error> {
+        if self.index.is_sp_ready() {
             return Ok(());
         }
         Err(Error::NotReady)
