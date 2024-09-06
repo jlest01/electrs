@@ -198,8 +198,8 @@ pub fn get_smallest_outpoint(outpoints_data: &[(Txid, u32)],) -> Result<[u8; 36]
 }
 
 pub fn recipient_calculate_tweak_data(
-    input_xpub_keys: Option<&[XOnlyPublicKey]>,
-    input_pub_keys: Option<&[PublicKey]>,
+    input_xpub_keys: Option<&[&XOnlyPublicKey]>,
+    input_pub_keys: Option<&[&PublicKey]>,
     outpoints_data: &[(Txid, u32)],
 ) -> Result<[u8; 33], Error> {
     let smallest_outpoint = get_smallest_outpoint(outpoints_data).unwrap();

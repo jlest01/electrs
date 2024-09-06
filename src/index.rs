@@ -496,16 +496,18 @@ fn scan_single_block_for_silent_payments(
 
             if combine_pubkey_result.is_ok() && (!pubkeys.is_empty() || !xonly_pubkeys.is_empty()) {
 
+                let pubkeys_ref: Vec<&PublicKey> = pubkeys.iter().collect();
                 let input_pub_keys = if pubkeys.is_empty() {
                     None
                 } else {
-                    Some(pubkeys.as_slice())
+                    Some(pubkeys_ref.as_slice())
                 }; 
 
+                let xonly_pubkeys_ref: Vec<&XOnlyPublicKey> = xonly_pubkeys.iter().collect();
                 let input_xpub_keys = if xonly_pubkeys.is_empty() {
                     None
                 } else {
-                    Some(xonly_pubkeys.as_slice())
+                    Some(xonly_pubkeys_ref.as_slice())
                 }; 
                 
                 let tweak = crate::sp::recipient_calculate_tweak_data(input_xpub_keys, input_pub_keys, &outpoints).unwrap();
